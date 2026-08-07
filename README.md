@@ -27,6 +27,7 @@ src/grafos_network/
 - Python 3.12 or later
 - NetworkX
 - Matplotlib
+- Numpy
 
 ## Installation
 
