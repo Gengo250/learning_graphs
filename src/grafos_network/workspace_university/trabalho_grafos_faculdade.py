@@ -10,3 +10,35 @@
 #     As distâncias são contadas em passos apenas nas 8 direções principais (norte, nordeste, leste, sudeste, sul, sudoeste, oeste, noroeste); meias diagonais não são alcançãveis (distância infinita).)
 #     Deve ser submetido o código-fonte em python notebook e utilizar a biblioteca networkX
 
+# "o"   círculo
+# "s"   quadrado
+# "^"   triângulo para cima
+# "v"   triângulo para baixo
+# ">"   triângulo direita
+# "<"   triângulo esquerda
+# "d"   losango fino
+# "p"   pentágono
+# "h"   hexágono
+# "8"   octógono
+
+import networkx as nx
+import numpy as np
+import matplotlib.pyplot as plt
+
+MATRIZ = np.array ([  #Assumir 1=Círculo, 2=Quadrado, 3=Triangulo, 4=Estrela
+    [2,3,1,3,1,2],
+    [3,3,2,1,2,3],
+    [1,2,3,2,3,1],
+    [3,1,2,2,3,3],
+    [1,2,3,2,3,1],
+    [2,3,1,1,2,3]
+])
+
+G = nx.from_numpy_array(MATRIZ)
+
+nx.draw(
+    G,
+    with_labels=False
+)
+
+plt.show()
