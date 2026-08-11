@@ -11,23 +11,37 @@ numberToLetter = {
 }
 
 
-MATRIZ = np.array([
-    [2, 3, 1, 3, 1, 2],
-    [3, 3, 2, 1, 2, 3],
-    [1, 2, 3, 2, 3, 1],
-    [3, 1, 2, 4, 3, 3],
-    [1, 2, 3, 2, 3, 1],
-    [2, 3, 1, 1, 2, 3]
-])
+np.random.seed(42)
+
+MATRIZ = np.random.randint(
+    1,
+    4,
+    size=(6, 6)
+)
+
+
+
+
+linha_estrela = np.random.randint(0, MATRIZ.shape[0])
+coluna_estrela = np.random.randint(0, MATRIZ.shape[1])
+
+MATRIZ[linha_estrela][coluna_estrela] = 4
+
+
+print("Matriz gerada:")
+print(MATRIZ)
+
 
 
 G = nx.DiGraph()
+
 
 pos = {
     (linha, coluna): (coluna, -linha)
     for linha in range(MATRIZ.shape[0])
     for coluna in range(MATRIZ.shape[1])
 }
+
 
 
 for linha in range(MATRIZ.shape[0]):
@@ -43,6 +57,8 @@ for linha in range(MATRIZ.shape[0]):
 
 arestas = []
 
+
+
 direcoes = [
     (-1,  0),
     (-1,  1),
@@ -55,14 +71,16 @@ direcoes = [
 ]
 
 
-# CÍRCULO -> QUADRADO
 
 quadrados_encontrados = set()
+
 
 for linha in range(MATRIZ.shape[0]):
     for coluna in range(MATRIZ.shape[1]):
 
         if MATRIZ[linha][coluna] == 1:
+
+            circulo = (linha, coluna)
 
             for dl, dc in direcoes:
 
@@ -77,28 +95,31 @@ for linha in range(MATRIZ.shape[0]):
 
                     if MATRIZ[nova_linha][nova_coluna] == 2:
 
+                        quadrado = (nova_linha, nova_coluna)
+
                         arestas.append(
                             (
-                                (linha, coluna),
-                                (nova_linha, nova_coluna)
+                                circulo,
+                                quadrado
                             )
                         )
 
-                        quadrados_encontrados.add(
-                            (nova_linha, nova_coluna)
-                        )
+                        quadrados_encontrados.add(quadrado)
 
 
-# QUADRADO -> TRIÂNGULO
 
 direcoes_quadrado = [
-    (0, 1),  # direita
-    (1, 0)   # baixo
+    (0, 1),
+    (1, 0)
 ]
+
 
 triangulos_encontrados = set()
 
+
 for linha, coluna in quadrados_encontrados:
+
+    quadrado = (linha, coluna)
 
     for dl, dc in direcoes_quadrado:
 
@@ -113,21 +134,21 @@ for linha, coluna in quadrados_encontrados:
 
             if MATRIZ[nova_linha][nova_coluna] == 3:
 
+                triangulo = (nova_linha, nova_coluna)
+
                 arestas.append(
                     (
-                        (linha, coluna),
-                        (nova_linha, nova_coluna)
+                        quadrado,
+                        triangulo
                     )
                 )
 
-                triangulos_encontrados.add(
-                    (nova_linha, nova_coluna)
-                )
+                triangulos_encontrados.add(triangulo)
 
 
-# ENCONTRAR A ESTRELA
 
 estrela = None
+
 
 for linha in range(MATRIZ.shape[0]):
     for coluna in range(MATRIZ.shape[1]):
@@ -135,8 +156,6 @@ for linha in range(MATRIZ.shape[0]):
         if MATRIZ[linha][coluna] == 4:
             estrela = (linha, coluna)
 
-
-# TRIÂNGULOS -> ESTRELA
 
 for triangulo in triangulos_encontrados:
 
@@ -148,13 +167,35 @@ for triangulo in triangulos_encontrados:
     )
 
 
+
 G.add_edges_from(arestas)
+
+
+
+print("\nEstrela:")
+print(estrela)
+
+print("\nQuadrados encontrados:")
+print(sorted(quadrados_encontrados))
+
+print("\nTriângulos encontrados:")
+print(sorted(triangulos_encontrados))
+
+print("\nArestas encontradas:")
+
+for origem, destino in G.edges:
+    print(origem, "->", destino)
+
 
 
 nx.draw_networkx_edges(
     G,
-    pos
+    pos,
+    arrows=True,
+    arrowsize=20,
+    node_size=700
 )
+
 
 
 formatos = {
@@ -163,6 +204,7 @@ formatos = {
     "T": ("^", "green"),
     "E": ("*", "yellow")
 }
+
 
 
 for tipo, (forma, cor) in formatos.items():
