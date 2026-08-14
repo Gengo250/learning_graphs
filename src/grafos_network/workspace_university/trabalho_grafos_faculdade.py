@@ -40,6 +40,15 @@ MATRIZ = np.array ([
     [2,3,1,1,2,3]
 ])
 
+
+numberToLetter = {
+    1: "C",
+    2: "Q",
+    3: "T",
+    4: "E"
+}
+
+
 G = nx.from_numpy_array(MATRIZ)
 
 nx.draw(
