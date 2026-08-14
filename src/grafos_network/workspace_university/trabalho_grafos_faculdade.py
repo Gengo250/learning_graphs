@@ -57,3 +57,5 @@ nx.draw(
 )
 
 plt.show()
+
+#TODO: Arquivo descontinuado pelo tipo de arquivo para entrega
