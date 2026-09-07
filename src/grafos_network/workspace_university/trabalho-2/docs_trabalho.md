@@ -1,6 +1,6 @@
 Olá a todos,
 
-O trabalho 2 é resolver o problema do caminhão presente nos slides Download slides da aula de exercícios. Atentem-se ao formato de leitura do arquivo de entrada e saída (pode ser impressão na tela).
+O trabalho 2 é resolver o problema do caminhão presente nos slides da aula de exercícios. Atentem-se ao formato de leitura do arquivo de entrada e saída (pode ser impressão na tela).
 
 Sobre a formatação dos arquivos de entrada. Na primeira linha serão fornecidas as quantidades de Ilhas I, então a quantidade de Pontes P e a quantidade de entregas que serão perguntadas, S, todos valores inteiros. As P linhas seguintes detalharão as pontes indicando ilha inicial A, ilha final B e peso suportado P, inteiros, as ilhas são contadas a partir de 1. Porfim, temos mais S linhas com ilha inicial X e ilha final Y, que devem ser usadas para geração das saídas.
 
