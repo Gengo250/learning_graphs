@@ -44,7 +44,7 @@ Avaliação:
     Gerar grafo inicial e plotar (1pt)
     Evidenciar pontes de interesse (que poderão ser usadas pelos caminhoneiros) (2pts)
     Responder o problema (2pts)
-    Justificativas (4pts)
+    Justificativas (4pts) - falar em sala de aula - nao ter comentários no notebook 
 
 OBS: o caso de teste que será usado será diferente do apresentado no link!
 
