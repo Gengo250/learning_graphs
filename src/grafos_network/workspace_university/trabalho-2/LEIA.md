@@ -2,6 +2,12 @@
 
 Explicação teórica e de código do notebook `caminhao_networkx.ipynb`.
 
+> - Fundamentação matemática completa (definições formais, teoremas com demonstração,
+>   análise do algoritmo de Kruskal, complexidade, casos limites e roteiro de arguição):
+>   [`TEORIA.md`](TEORIA.md).
+> - Referência técnica de API (cada função, cada parâmetro, defaults, tipos e erros):
+>   [`CODIGO.md`](CODIGO.md).
+
 ---
 
 ## 1. O problema
