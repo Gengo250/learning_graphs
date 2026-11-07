@@ -1,0 +1,14 @@
+{
+  "dataVersion": "2026-10-08",
+  "gameVersion": "1.4.5",
+  "updates": [
+    {
+      "dataVersion": "2026-10-08",
+      "added": [
+        "SharpTears"
+      ],
+      "removed": [],
+      "renamed": {}
+    }
+  ]
+}
