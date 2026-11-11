@@ -1,162 +1,69 @@
 # Terraria Network Analysis
 
-Trabalho final de Grafos: dependências de crafting e relações documentadas do Terraria.
-A implementação completa está em [`notebooks/analysis.ipynb`](notebooks/analysis.ipynb).
-O notebook refatora a primeira etapa existente, preserva suas dependências e responde às
-questões de [`docs/LEIA.md`](docs/LEIA.md) com resultados calculados.
+Trabalho final de Teoria dos Grafos sobre fabricação, obtenção e progressão em Terraria. Toda a implementação, as figuras e as respostas ao [enunciado](docs/LEIA.md) estão em [notebooks/analysis.ipynb](notebooks/analysis.ipynb).
 
-## Executar
+## Execução
 
-Na pasta `src/grafos_network/workspace_university/trabalho-3/`:
+Na pasta deste projeto, com Python 3.12 e `uv`:
 
 ```bash
 uv sync
 uv run jupyter notebook notebooks/analysis.ipynb
 ```
 
-Selecione **Python 3 (ipykernel)** e execute todas as células em ordem. O notebook confere
-que o kernel pertence à `.venv` do projeto. Os caminhos funcionam tanto a partir da raiz
-do projeto quanto de `notebooks/`. Python 3.12 e dependências são gerenciados por `uv.lock`;
-não foram necessárias novas dependências.
-
-Execução integral sem interface:
+Execute todas as células em ordem. Os caminhos funcionam a partir da raiz do projeto ou de `notebooks/`. A análise não exige acesso à internet nem salva gráficos ou resultados em arquivos separados. Para execução integral sem interface:
 
 ```bash
-uv run jupyter nbconvert --to notebook --execute --inplace notebooks/analysis.ipynb --ExecutePreprocessor.timeout=240
+uv run jupyter nbconvert --to notebook --execute --inplace notebooks/analysis.ipynb --ExecutePreprocessor.timeout=300
 ```
 
-A execução foi verificada com Python 3.12.13 e NetworkX 3.7. Leva cerca de 35 segundos
-nesta máquina, variando conforme o hardware. Não consulta a internet nem grava gráficos,
-CSVs ou arquivos de resultados: as figuras e tabelas permanecem no notebook.
-Em um sandbox que bloqueie sockets locais, o kernel Jupyter precisa da permissão correspondente.
+O kernel Jupyter precisa poder abrir sockets locais. As dependências existentes em `pyproject.toml` e `uv.lock` são suficientes.
 
-## Representações
+## Modelo e análise
 
-| Grafo | Significado | Vértices | Arestas |
-|---|---|---:|---:|
-| `G` | `DiGraph`: ingrediente → produto, preservado da primeira etapa | 3.773 | 7.045 |
-| `G_full` | `MultiDiGraph`: entidades e relações documentadas | 10.672 | 28.710 |
-| `H` | Projeção simples não dirigida de crafting, principal acadêmica | 3.773 | 6.692 |
-| `H_full` | Projeção simples de todas as relações, somente descritiva | 10.672 | 28.150 |
+- `G` é um `MultiDiGraph` dirigido com itens, receitas, estações, bosses, marcos, biomas, fontes de drop, ofertas, condições, eventos e bestiário. Cada linha de drop ou oferta é uma rota separada; suas condições e texto pertencem à rota.
+- Uma receita exige todos os slots; opções do mesmo slot e receitas distintas são alternativas. Quantidades e identificação dos slots ficam nos atributos. Um caminho isolado não demonstra que uma receita inteira pode ser concluída.
+- Os vértices de receita e de rota são nomeados pelo conteúdo, não pelo índice da lista: `recipe:3234` aparece como `Onyx Blaster ⚒ Mythril Anvil`, e receitas alternativas do mesmo produto são numeradas (`Night's Edge ⚒ Demon Altar · alt. 1/2`). As rotas mostram a taxa do drop ou o vendedor. As funções `descrever` e `receitas_de`, no notebook, imprimem qualquer vértice sem abrir os JSONs.
+- Os 32 bosses de `bosses.json` formam um tipo próprio, com a etapa no rótulo (`pré-Hardmode`, `Hardmode`, `evento`) e sempre a mesma cor. Sacolas de tesouro e contêineres deixaram de ser um tipo só: `bag` tem 18 vértices e `container` 69, o que mantém visíveis fontes como baús do Dungeon.
+- O diagrama de dependências usa camadas: o item-alvo no topo e cada nível abaixo a um passo dirigido de distância, de modo que minérios, fontes e bosses ficam na base. Além da cadeia de fabricação, ele mostra a fonte de cada item — drop, baú ou vendedor — com o boss ou inimigo correspondente. Sacolas são omitidas do desenho porque repetem o drop do próprio boss.
+- A paleta é fixa: item azul-claro, receita âmbar, **boss vermelho em hexágono**, inimigo salmão, contêiner cinza, bioma verde, evento azul-escuro, vendedor magenta, marco roxo em losango, rotas cinza-claro. As arestas diferenciam `produz` (laranja), `ingrediente` (cinza), obtenção (azul-escuro), boss que destrava uma fonte (vermelho tracejado) e marco (roxo tracejado).
+- Um marco só aparece na figura quando é a única explicação de um item, caso do Chlorophyte Ore, que não tem receita nem drop. Quando há receita ou fonte, a estrutura já responde a origem e o marco seria ruído.
+- Marcos de `items.json` indicam disponibilidade estimada, não exigência universal. As regras suplementares, com links para a wiki no notebook, representam Hardmode, chefes mecânicos e marcos sem criar uma sequência linear de todos os bosses.
+- `H` é uma projeção simples e não dirigida apenas das relações de ingrediente e produto. Ela perde direção, quantidades, condições e lógica AND/OR. É utilizada para distribuições, centralidades, componentes, comparações ER/WS/BA e nulo de graus, robustez e BFS.
 
-Contagens da execução validada; o notebook as recalcula. `H` é reconstruído por caminhos
-Item → Receita → Item em `G_full` e conferido contra `G`. As comparações sintéticas usam
-somente `H`; não misturam métricas de representações diferentes.
+A execução atual produz 3.773 vértices e 6.692 arestas em `H`, iguais aos da projeção anterior. Os três destaques são agora Torch, Iron Bar e Lead Bar: o consenso atual combina ranks de grau, intermediação amostrada e proximidade; o resultado anterior usava outro critério. A relevância é topológica, não uma medida da necessidade do item para concluir o jogo. As conclusões numéricas são calculadas no notebook.
 
-Os slots de uma receita são requisitos conjuntos; opções de um grupo e receitas distintas
-são alternativas. `recipes_desktop` e os nós de receita conservam requisitos, quantidades,
-estações e campos originais. `G.edges[u, v]['uses']` registra cada uso. Quantidades e
-probabilidades de drop **não são pesos de aresta**.
+## Dados e limitações
 
-A refatoração substitui validações redundantes por verificações de integridade e elimina
-o cálculo manual de posições/interseções no desenho da Terra Blade. A figura usa
-`multipartite_layout` e mantém todos os ancestrais: 32 itens e 40 relações, incluindo minérios.
+Os JSONs originais vêm de [Terraria Progress Tracker](https://github.com/Doeschi/Terraria-Progress-Tracker), diretório `pipeline/data_readable`, commit `e1726af0908d928a3e2fa437286558827a6dd3b0`; `meta.json` declara Terraria 1.4.5 e data dos dados 2026-10-08. A fonte deriva da [Terraria Wiki](https://terraria.wiki.gg/) e informa licença CC BY-NC-SA 4.0. O [contrato dos dados](https://github.com/Doeschi/Terraria-Progress-Tracker/blob/e1726af0908d928a3e2fa437286558827a6dd3b0/pipeline/data_readable/README.md) descreve os campos.
 
-## Fontes e versões
+A base não fornece um modelo geológico de mineração. A explicação textual de Chlorophyte é exibida sem inferir uma localização a partir de receitas. Textos e tokens de condições são preservados, mas não constituem um simulador lógico completo; variantes e rotas não documentadas podem faltar. Para a oferta de Leaf Wings, o texto original explicita a conjunção de Hardmode, noite, Jungle e Plantera. A associação de Mothron a Plantera deixou de ser estimativa: a [página da wiki](https://terraria.wiki.gg/wiki/Mothron) registra a nota de versão 1.4.1 do desktop segundo a qual Mothron só aparece depois de Plantera derrotada, o que vale para a versão 1.4.5 destes dados. Essa é a única aresta que a pesquisa acrescentou a `G` (`boss:plantera → enemy:mothron`), e é o que coloca Plantera junto do Mothron no diagrama em vez de ao lado da Terra Blade. As amostras de caminhos, centralidade e modelos sintéticos não provam lei de potência ou small-world; a preservação de informação não é inferível apenas da topologia.
 
-Fonte dos 12 JSONs: **[Terraria Progress Tracker](https://github.com/Doeschi/Terraria-Progress-Tracker)**,
-de Doeschi, diretório `pipeline/data_readable`. Dados derivados da
-[Terraria Wiki](https://terraria.wiki.gg/), sob **CC BY-NC-SA 4.0**, conforme a documentação da fonte.
-Os JSONs são distribuídos sem alterações; a transformação analítica acontece somente em memória.
+## Pesquisa nas wikis
 
-- Commit fixado: `e1726af0908d928a3e2fa437286558827a6dd3b0` (2026-10-25).
-- `meta.json`: `dataVersion = 2026-10-08`, `gameVersion = 1.4.5`.
-- Arquivos complementares obtidos em 2026-11-01.
-- Os três arquivos anteriores foram preservados byte a byte e conferidos por hash contra a fonte.
-- [Contrato dos datasets](https://github.com/Doeschi/Terraria-Progress-Tracker/blob/e1726af0908d928a3e2fa437286558827a6dd3b0/pipeline/data_readable/README.md).
-- [Regras do pipeline](https://github.com/Doeschi/Terraria-Progress-Tracker/blob/e1726af0908d928a3e2fa437286558827a6dd3b0/pipeline/mapping.toml), consultadas para distinguir agrupamento, progressão e pré-requisitos.
+Os JSONs do tracker derivam da Terraria Wiki oficial, mas não explicam a progressão do jogo. As páginas abaixo foram consultadas em 2026-11-07 para entender essa progressão, nomear os vértices e conferir as receitas usadas como exemplo. Elas são a origem do resumo em etapas que está no notebook, na seção "Como o jogo progride, segundo as wikis".
 
-| Arquivo | Uso |
-|---|---|
-| `items.json` (existente) | Identidade por `key`, categorias, obtenção, biomas/eventos agregados e progressão |
-| `recipes.json` (existente) | Receitas, grupos alternativos, estações, condições ambientais e Shimmer |
-| `milestones.json` (existente) | Marcos de disponibilidade estimada pelo tracker |
-| `biomes.json` | Nomes e IDs dos biomas |
-| `bosses.json` | Bosses e agrupamento de fontes de drop |
-| `bestiary.json` | Criaturas, tipos, localização e IDs de NPC |
-| `drops.json` | Fontes, linhas de drops, probabilidades, quantidades e grupos |
-| `vendors.json` | Identificação dos vendedores |
-| `shops.json` | Ofertas e condições por linha |
-| `events.json` | Identificação dos eventos |
-| `conditions.json` | Definições dos tokens de condição |
-| `meta.json` | Versões declaradas pelo produtor da base |
+Progressão e bosses:
 
-Não foram baixados arquivos de imagens, textos de introdução, conjuntos de armaduras ou
-Extractinator: não são necessários às relações analisadas. Não existe JSON específico de
-geração geológica de minérios no inventário consultado.
+- [Guide:Game progression](https://terraria.wiki.gg/wiki/Guide:Game_progression) — escada completa, de King Slime a Moon Lord.
+- [Hardmode](https://terraria.wiki.gg/wiki/Hardmode) — o que a Wall of Flesh libera e a ordem Cobalt/Palladium → Mythril/Orichalcum → Adamantite/Titanium, cada minério exigindo a picareta do nível anterior.
+- [Bosses](https://terraria.wiki.gg/wiki/Bosses) — quais bosses são opcionais e quais travam etapas.
+- [Plantera](https://terraria.wiki.gg/wiki/Plantera) — acesso ao Jungle Temple e ao Golem.
+- [Mothron](https://terraria.wiki.gg/wiki/Mothron) — "Can now only spawn after Plantera has been defeated", nota da versão 1.4.1 do desktop.
+- [Chlorophyte Ore](https://terraria.wiki.gg/wiki/Chlorophyte_Ore) — exige Drax ou Pickaxe Axe, ferramentas que dependem dos três bosses mecânicos; é a razão de `milestoneVia` ser apenas texto no modelo.
 
-## Relações e cobertura
+Fabricação:
 
-`G_full` tem 13 tipos de vértices e 21 tipos de relação. Inclui ingredientes/receitas/produtos,
-estações e suas alternativas, condições ambientais de crafting, Shimmer, encontro de criaturas
-em biomas, eventos, drops de criaturas, conteúdo de sacolas/contêineres, vendedores,
-contextos de venda/drop e disponibilidade por milestone. Cada aresta guarda proveniência;
-linhas condicionais mantêm os dados originais. Boss → fonte é agrupamento, não drop direto.
+- [Crafting](https://terraria.wiki.gg/wiki/Crafting) — ingredientes, estações e proximidade exigida.
+- [Crafting stations](https://terraria.wiki.gg/wiki/Crafting_stations) — estações por etapa e as condições ambientais que o tracker também trata como estação, como Water, Honey, Lava, Snow Biome, Ecto Mist e Graveyard.
+- [Recipes](https://terraria.wiki.gg/wiki/Recipes) — organização por estação e receitas alternativas do mesmo item.
+- [Alternative crafting ingredients](https://terraria.wiki.gg/wiki/Alternative_crafting_ingredients) — grupos como `Any Wood` e `Any Iron Bar`, que no modelo são as opções dentro de um slot.
+- [Shimmer](https://terraria.wiki.gg/wiki/Shimmer) — transmutação por imersão, e não receita; por isso ocupa arestas próprias.
 
-**Biomas exigem interpretação:** `items.biomes` descreve obtenção por drops/vendas, não geração
-de minérios. Ecto Mist/Graveyard e Snow Biome são condições explícitas de crafting;
-a primeira equivalência é corroborada pela [Wiki](https://terraria.wiki.gg/wiki/Ecto).
-Um minério participar de uma receita não torna seu bioma uma condição da receita.
+Itens usados nas figuras e nas validações:
 
-| Dados | Integrados / originais |
-|---|---:|
-| Itens desktop | 6.184 / 6.186 |
-| Receitas | 3.655 / 3.655 |
-| Linhas Shimmer | 287 / 287 (402 arestas após expansão de grupos) |
-| Linhas de drops | 3.677 / 3.680 |
-| Linhas de lojas | 817 / 817 |
-| Entradas do bestiário | 546 / 546 |
-| Fontes de drops | 487 / 488 |
-
-Três drops e uma fonte foram excluídos por plataforma; nenhum relacionamento foi completado
-por hipótese. As 37 fontes desktop sem correspondência inequívoca no bestiário permanecem
-como `drop_source`. Não são referências quebradas. `G_full` tem 85 componentes fracas,
-9.134 fortes e 83 isolados; `G` tem 62 componentes fracas e nenhum isolado.
-
-## Análises implementadas
-
-- Estrutura, densidade, graus de entrada/saída, componentes, clustering e assortatividade.
-- Distâncias por BFS amostrada e limites explícitos para o diâmetro da maior componente.
-- Degree, betweenness amostrada, closeness e PageRank; rankings separados e três destaques por consenso de ranks.
-- Comunidades Louvain, tamanhos, categorias, biomas informados e milestones.
-- ER G(n,m), WS, BA e nulo com sequência de graus preservada: cinco realizações por modelo.
-- Falhas aleatórias (dez repetições) e ataques estáticos por grau e betweenness.
-- Eficiência, difusão por BFS, pontes, articulações, blocos biconexos e caminhos reais.
-- Onze figuras, incluindo distribuições de grau, centralidades e clustering, comparações sintéticas e subgrafos legíveis.
-
-Semente base 42; caminhos usam até 128 origens e betweenness até 256. PageRank tem α=0,85,
-tolerância explícita e limite de iterações. O nulo realiza 5m trocas duplas aceitas, mantendo
-o grau de cada vértice. WS usa k=4 e β=0,1; BA usa m=2. Diferenças de densidade impostas
-pelos parâmetros inteiros são exibidas nas tabelas.
-
-## Resultados e interpretação
-
-Na projeção acadêmica, os destaques pelo consenso declarado são **Torch, Stone Block e Iron Bar**.
-A maior componente reúne 3.599 itens (95,4%). Grau médio: 3,55; clustering: 0,0323;
-assortatividade: −0,2228; distância média estimada na maior componente: 5,66 ± 0,14
-(erro padrão por amostragem de origens). O diâmetro dessa componente está entre 21 e 24.
-
-Com 10% dos itens removidos, a maior componente retém 80,8% do total original nas falhas
-aleatórias, 2,0% no ataque por grau e 2,6% por betweenness. São resultados de conectividade,
-não uma simulação completa de crafting. Existem 1.548 pontes e 446 articulações.
-
-H apresenta hubs e caminhos curtos, com clustering maior que ER. Entretanto, esse clustering
-é menor que o do nulo que preserva os graus: **não há classificação inequívoca como small-world**.
-A heterogeneidade se aproxima qualitativamente de um aspecto de BA, mas **não foi comprovada
-uma lei de potência**. As evidências e ressalvas estão nas respostas calculadas do notebook.
-
-## Verificação e limites
-
-`uv sync` e a execução integral de todas as células passaram. As verificações cobrem identidade,
-referências, quantidades, registros de drops/lojas, cobertura e equivalência exata do crafting.
-Os vértices, arestas e ocorrências de receitas foram comparados com a execução anterior.
-Nenhum JSON original, documento da disciplina ou outro trabalho foi alterado.
-
-Limitações principais: geração de minérios ausente; variantes sem correspondência segura;
-progressão estimada pelo tracker; diferentes dificuldades/seeds coexistem na base; condições
-textuais não formam um simulador lógico. A projeção H perde direção, condições e AND/OR.
-Os métodos aproximados, amostras sintéticas e heurística de comunidades têm limites explícitos.
-Não foram criados módulos `.py`, estrutura de framework, pastas de resultados ou testes externos.
+- [Terra Blade](https://terraria.wiki.gg/wiki/Terra_Blade), [Excalibur](https://terraria.wiki.gg/wiki/Excalibur) — confirmam True Excalibur e True Night's Edge na Mythril/Orichalcum Anvil, como está em `recipes.json`.
+- [Onyx Blaster](https://terraria.wiki.gg/wiki/Onyx_Blaster) — o vértice `recipe:3234`, usado como exemplo de rótulo legível.
 
 ## Integridade dos arquivos
 
